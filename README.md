@@ -1,22 +1,34 @@
-# YouTube to Audio Converter 🎵
+# 🎵 YouTube to Audio Converter (GUI)
 
-Un'applicazione desktop in Python con interfaccia grafica che consente di scaricare l'audio da video YouTube in diversi formati.
+Un'applicazione Python con interfaccia grafica per convertire facilmente i video YouTube in file audio (mp3, wav, aac, flac, ecc.).
 
-## 🖥️ Funzionalità
+## 🚀 Funzionalità
 
-- ✅ Interfaccia utente semplice con `tkinter`
-- 🎚️ Supporto a più formati audio: `mp3`, `wav`, `aac`, `flac`, ecc.
-- 📂 Scelta personalizzata della cartella di destinazione
-- 📶 Indicatore di avanzamento del download
-- 🔒 Blocca i pulsanti durante il download per evitare conflitti
-- 🧰 Converte automaticamente con `ffmpeg` via `yt-dlp`
+- Interfaccia moderna con `tkinter`
+- Supporto a più formati audio: mp3, wav, aac, m4a, flac, opus, vorbis
+- Selezione personalizzata della cartella di destinazione
+- Barra di avanzamento e log in tempo reale
+- Estrazione audio con `yt-dlp` e `ffmpeg`
 
----
+## 🧰 Struttura del progetto
 
-## 🚀 Avvio rapido
+youtubeconverter/
+├── config.py # Configurazioni base (formati supportati, path ffmpeg)
+├── downloader.py # Logica per il download ed estrazione audio
+├── gui.py # Interfaccia grafica e interazioni utente
+├── main.py # Punto di ingresso dell'applicazione
+├── utils.py # Validazioni URL e formati
+└── README.md # Questo file
 
-### 1. Clona il progetto
+## 🛠 Requisiti
+
+- Python 3.8+
+- [ffmpeg](https://ffmpeg.org/download.html) installato e disponibile nel percorso indicato in `config.py`
+- Librerie Python:
+  - `yt-dlp`
+  - `tkinter` (incluso in Python)
+
+### 📦 Installazione dipendenze
 
 ```bash
-git clone https://github.com/francesco-cavallo/youtube-to-audio.git
-cd youtubeConverter
+pip install yt-dlp
