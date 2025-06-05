@@ -1,3 +1,5 @@
+# Configura e avvia il download dell'audio con yt-dlp, salvando nella cartella scelta
+
 import os
 import yt_dlp
 from config import FFMPEG_PATH
@@ -27,5 +29,10 @@ def download_audio(url, format_audio, output_folder, hook):
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
         return f"✅ File scaricato correttamente in: {output_folder}"
+    except yt_dlp.utils.DownloadError as e:
+        return "❌ Errore durante il download. Verifica l'URL o la connessione a internet."
+    except FileNotFoundError as e:
+        return "❌ FFMPEG non trovato. Controlla il percorso in config.py."
     except Exception as e:
-        return f"❌ Errore: {e}"
+        print("Errore tecnico:", e)
+        return "❌ Errore sconosciuto durante il download."

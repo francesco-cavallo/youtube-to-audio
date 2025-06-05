@@ -10,6 +10,7 @@ class YouTubeConverterApp:
         self.root.title("YouTube to Audio")
         self.root.geometry("500x500")
         self.root.configure(bg="#1e1e1e")
+        self.root.resizable(False, False)
 
         self.selected_folder = DEFAULT_DOWNLOAD_FOLDER
         self.current_title = tk.StringVar(value="Nessun download in corso")
@@ -23,8 +24,8 @@ class YouTubeConverterApp:
         button_style = {"bg": "#0078D7", "fg": "#ffffff", "activebackground": "#005999"}
 
         tk.Label(self.root, text="URL del video YouTube:", **label_style).pack(pady=5)
-        self.url_entry = tk.Entry(self.root, width=50, **entry_style)
-        self.url_entry.pack(pady=5)
+        self.youtube_url_entry = tk.Entry(self.root, width=50, **entry_style)
+        self.youtube_url_entry.pack(pady=5)
 
         tk.Label(self.root, text="Formato audio:", **label_style).pack(pady=5)
         self.format_var = tk.StringVar()
@@ -56,6 +57,7 @@ class YouTubeConverterApp:
         style.configure("TCombobox", fieldbackground="#2e2e2e", background="#2e2e2e", foreground="#ffffff")
 
     def select_folder(self):
+        # Seleziona cartella di destinazione e aggiorna l'etichetta nella UI
         folder = filedialog.askdirectory()
         if folder:
             self.selected_folder = folder
@@ -82,6 +84,7 @@ class YouTubeConverterApp:
             pass
 
     def hook(self, d):
+        # Callback usata da yt-dlp per aggiornare la barra di avanzamento e i log
         def update():
             if d['status'] == 'downloading':
                 title = d.get('info_dict', {}).get('title', 'Scaricamento in corso...')
@@ -97,11 +100,12 @@ class YouTubeConverterApp:
         threading.Thread(target=self.start_download).start()
 
     def start_download(self):
+        # Avvia il download audio, disabilita i bottoni temporaneamente
         self.set_buttons(False)
         self.progress["value"] = 0
         self.current_title.set("Inizio download...")
 
-        url = self.url_entry.get().strip()
+        url = self.youtube_url_entry.get().strip()
         format_audio = self.format_var.get().strip().lower()
         self.log(f"Inizio download: {url} in formato {format_audio}")
 
@@ -109,4 +113,5 @@ class YouTubeConverterApp:
         self.log(status)
         messagebox.showinfo("Stato", status)
 
+        self.current_title.set("✅ Download completato con successo.")
         self.set_buttons(True)

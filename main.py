@@ -1,3 +1,8 @@
+"""
+YouTube to Audio Downloader GUI
+Usa yt-dlp per scaricare l'audio da un video YouTube nel formato scelto.
+"""
+
 from gui import YouTubeConverterApp
 import tkinter as tk
 
