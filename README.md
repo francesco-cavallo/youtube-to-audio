@@ -18,5 +18,5 @@ Un'applicazione desktop in Python con interfaccia grafica che consente di scaric
 ### 1. Clona il progetto
 
 ```bash
-git clone https://github.com/tuo-username/youtubeConverter.git
+git clone https://github.com/francesco-cavallo/youtube-to-audio.git
 cd youtubeConverter
