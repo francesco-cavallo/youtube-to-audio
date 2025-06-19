@@ -8,7 +8,7 @@ from utils import validate_inputs
 def download_audio(url, format_audio, output_folder, hook):
     error = validate_inputs(url, format_audio)
     if error:
-        return error
+        return False, error
 
     ydl_opts = {
         'format': 'bestaudio/best',
@@ -28,11 +28,11 @@ def download_audio(url, format_audio, output_folder, hook):
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
-        return f"✅ File scaricato correttamente in: {output_folder}"
-    except yt_dlp.utils.DownloadError as e:
-        return "❌ Errore durante il download. Verifica l'URL o la connessione a internet."
-    except FileNotFoundError as e:
-        return "❌ FFMPEG non trovato. Controlla il percorso in config.py."
+        return True, f"✅ File scaricato correttamente in: {output_folder}"
+    except yt_dlp.utils.DownloadError:
+        return False, "❌ Errore durante il download. Verifica l'URL o la connessione a internet."
+    except FileNotFoundError:
+        return False, "❌ FFMPEG non trovato. Controlla il percorso in config.py."
     except Exception as e:
         print("Errore tecnico:", e)
-        return "❌ Errore sconosciuto durante il download."
+        return False, "❌ Errore sconosciuto durante il download."

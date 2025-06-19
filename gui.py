@@ -4,10 +4,12 @@ from config import DEFAULT_DOWNLOAD_FOLDER, SUPPORTED_FORMATS
 from downloader import download_audio
 import threading
 import os
+from i18n import t
 
 FONT_REGULAR = ("Segoe UI", 10)
 FONT_BOLD = ("Segoe UI", 10, "bold")
 FONT_ITALIC = ("Segoe UI", 10, "italic")
+
 
 class YouTubeConverterApp:
     def __init__(self, root):
@@ -23,7 +25,7 @@ class YouTubeConverterApp:
         self.styles = {}
         self.build_ui()
         self.setup_styles()
-        self.youtube_url_entry.focus()
+        self.set_url_placeholder()
 
     def build_ui(self):
         self.container = tk.Frame(self.root)
@@ -40,6 +42,7 @@ class YouTubeConverterApp:
 
         self.youtube_url_entry = tk.Entry(self.container, width=50)
         self.youtube_url_entry.grid(row=2, column=0, columnspan=3, sticky="we", padx=5, pady=5)
+        self.youtube_url_entry.bind("<FocusIn>", self.clear_url_placeholder)
 
         self.format_label = tk.Label(self.container, text="🎧 Formato audio:")
         self.format_label.grid(row=3, column=0, columnspan=3, sticky="n", pady=(10, 2))
@@ -56,23 +59,26 @@ class YouTubeConverterApp:
         self.progress.grid(row=6, column=0, columnspan=3, padx=10, pady=10)
 
         self.log_area = tk.Text(self.container, height=8, width=65, font=("Consolas", 9))
-        self.log_area.grid(row=7, column=0, columnspan=3, padx=5, pady=10)
+        self.log_area.grid(row=7, column=0, columnspan=3, padx=5, pady=(5, 0))
         self.log_area.config(state=tk.DISABLED)
 
+        self.clear_log_btn = tk.Button(self.container, text="🧹 Pulisci Log", command=self.clear_log)
+        self.clear_log_btn.grid(row=8, column=2, padx=5, pady=2, sticky="e")
+
         self.folder_label = tk.Label(self.container, text=f"📁 Cartella: {self.selected_folder}")
-        self.folder_label.grid(row=8, column=0, columnspan=3, sticky="w", padx=5, pady=(5, 0))
+        self.folder_label.grid(row=9, column=0, columnspan=3, sticky="w", padx=5, pady=(5, 0))
 
         self.choose_button = tk.Button(self.container, text="Scegli cartella di destinazione", command=self.select_folder)
-        self.choose_button.grid(row=9, column=0, padx=5, pady=(10, 5), sticky="we")
+        self.choose_button.grid(row=10, column=0, padx=5, pady=(10, 5), sticky="we")
 
         self.download_button = tk.Button(self.container, text="⬇️ Scarica Audio", command=self.threaded_download)
-        self.download_button.grid(row=9, column=1, padx=5, pady=(10, 5), sticky="we")
+        self.download_button.grid(row=10, column=1, padx=5, pady=(10, 5), sticky="we")
 
         self.open_folder_button = tk.Button(self.container, text="📂 Apri cartella", command=self.open_folder)
-        self.open_folder_button.grid(row=9, column=2, padx=5, pady=(10, 5), sticky="we")
+        self.open_folder_button.grid(row=10, column=2, padx=5, pady=(10, 5), sticky="we")
 
         self.status_label = tk.Label(self.container, textvariable=self.status_message, font=FONT_ITALIC)
-        self.status_label.grid(row=10, column=0, columnspan=3, pady=(5, 0))
+        self.status_label.grid(row=11, column=0, columnspan=3, pady=(5, 0))
 
     def setup_styles(self):
         self.styles = {
@@ -88,15 +94,6 @@ class YouTubeConverterApp:
 
         style = ttk.Style()
         style.theme_use('default')
-        theme = self.styles[self.theme]
-
-        # Applica tema alle combobox
-        style.configure("TCombobox",
-            fieldbackground=theme["entry_bg"],
-            background=theme["entry_bg"],
-            foreground=theme["fg"]
-        )
-
         self.apply_theme()
 
     def apply_theme(self):
@@ -105,36 +102,25 @@ class YouTubeConverterApp:
         self.container.configure(bg=theme["bg"])
 
         for widget in self.container.winfo_children():
-            # Per sicurezza controlla se il widget supporta la configurazione di bg e fg
             try:
-                # Se il widget supporta 'bg' e 'fg', applica
                 if 'bg' in widget.keys() and 'fg' in widget.keys():
                     if isinstance(widget, tk.Label):
                         widget.configure(bg=theme["bg"], fg=theme["fg"])
                     elif isinstance(widget, tk.Button):
                         widget.configure(bg=theme["btn_bg"], fg=theme["btn_fg"],
-                                        activebackground=theme["btn_active_bg"], relief=tk.FLAT, bd=0)
+                                         activebackground=theme["btn_active_bg"], relief=tk.FLAT, bd=0)
                     elif isinstance(widget, tk.Entry):
-                        widget.configure(bg=theme["entry_bg"], fg=theme["fg"],
-                                        insertbackground=theme["fg"], relief=tk.FLAT)
+                        widget.configure(bg=theme["entry_bg"], fg=theme["fg"], insertbackground=theme["fg"], relief=tk.FLAT)
                     elif isinstance(widget, tk.Text):
-                        widget.configure(bg=theme["entry_bg"], fg=theme["log_fg"],
-                                        insertbackground=theme["log_fg"])
-                    else:
-                        # Se widget ha bg e fg ma non è uno dei tipi sopra, prova a settarli
-                        widget.configure(bg=theme["bg"], fg=theme["fg"])
-                else:
-                    # Non ha bg/fg, probabilmente ttk o altro, skip
-                    pass
+                        widget.configure(bg=theme["entry_bg"], fg=theme["log_fg"], insertbackground=theme["log_fg"])
             except tk.TclError as e:
-                print(f"Errore di configurazione widget {widget} tipo {type(widget)}: {e}")
+                print(f"Errore configurazione widget: {e}")
+
         style = ttk.Style()
-        style.theme_use('default')
         style.configure("Custom.TCombobox",
-            fieldbackground=theme["entry_bg"],
-            background=theme["entry_bg"],
-            foreground=theme["fg"]
-        )
+                        fieldbackground=theme["entry_bg"],
+                        background=theme["entry_bg"],
+                        foreground=theme["fg"])
         self.format_dropdown.configure(style="Custom.TCombobox")
 
     def toggle_theme(self):
@@ -153,19 +139,10 @@ class YouTubeConverterApp:
         except Exception as e:
             self.log(f"❌ Impossibile aprire la cartella: {e}")
 
-    def set_buttons(self, enabled):
-        state = "normal" if enabled else "disabled"
-        color = self.styles[self.theme]["btn_bg"] if enabled else "#5a5a5a"
-        text_fg = self.styles[self.theme]["btn_fg"] if enabled else self.styles[self.theme]["disabled_fg"]
-
-        # Per la Combobox usa .config(state=state) solo, non bg e fg (perché è ttk)
-        for widget in [self.choose_button, self.download_button, self.open_folder_button, self.youtube_url_entry]:
-            widget.config(state=state)
-        self.format_dropdown.config(state=state)
-
-        self.choose_button.config(bg=color, fg=text_fg)
-        self.download_button.config(bg=color, fg=text_fg)
-        self.open_folder_button.config(bg=color, fg=text_fg)
+    def clear_log(self):
+        self.log_area.config(state=tk.NORMAL)
+        self.log_area.delete(1.0, tk.END)
+        self.log_area.config(state=tk.DISABLED)
 
     def log(self, msg):
         self.log_area.config(state=tk.NORMAL)
@@ -196,26 +173,66 @@ class YouTubeConverterApp:
 
     def animate_completion(self):
         original_color = self.download_button.cget("bg")
-        self.download_button.config(bg="#28a745")  # verde
+        self.download_button.config(bg="#28a745")
         self.root.after(500, lambda: self.download_button.config(bg=original_color))
 
     def threaded_download(self):
-        threading.Thread(target=self.start_download).start()
+        self.update_ui_for_download(starting=True)
+        thread = threading.Thread(target=self.safe_download_audio)
+        thread.start()
+
+    def safe_download_audio(self):
+        try:
+            self.start_download()
+        except Exception as e:
+            self.log(f"❌ Errore inaspettato: {e}")
+            self.set_status("Errore inaspettato durante il download.", success=False)
+            self.set_buttons(True)
 
     def start_download(self):
         self.set_buttons(False)
         self.progress["value"] = 0
         self.current_title.set("Inizio download...")
-        self.status_message.set("")
 
         url = self.youtube_url_entry.get().strip()
         format_audio = self.format_var.get().strip().lower()
+
+        self.youtube_url_entry.config(highlightthickness=0)
+
         self.log(f"Inizio download: {url} in formato {format_audio}")
+        success, message = download_audio(url, format_audio, self.selected_folder, self.hook)
+        self.log(message)
 
-        status = download_audio(url, format_audio, self.selected_folder, self.hook)
-        self.log(status)
-        self.status_message.set(status)
-        messagebox.showinfo("Stato", status)
-
+        self.set_status(message, success=success)
         self.set_buttons(True)
         self.root.title("YouTube to Audio")
+
+    def set_buttons(self, enabled):
+        state = "normal" if enabled else "disabled"
+        for widget in [self.choose_button, self.download_button, self.open_folder_button, self.youtube_url_entry]:
+            widget.config(state=state)
+        self.format_dropdown.config(state=state)
+
+    def set_status(self, message, success=True):
+        self.status_message.set(message)
+        color = "#28a745" if success else "#e63946"
+        self.status_label.config(fg=color)
+
+    def update_ui_for_download(self, starting: bool):
+        if starting:
+            self.set_status("⏳ Scaricamento in corso...", success=True)
+            self.set_buttons(False)
+            self.theme_button.config(state=tk.DISABLED)
+        else:
+            self.set_status("✅ Download completato", success=True)
+            self.set_buttons(True)
+            self.theme_button.config(state=tk.NORMAL)
+
+    def set_url_placeholder(self):
+        self.youtube_url_entry.insert(0, "Incolla qui il link del video...")
+        self.youtube_url_entry.config(fg="#888")
+
+    def clear_url_placeholder(self, event):
+        if self.youtube_url_entry.get() == "Incolla qui il link del video...":
+            self.youtube_url_entry.delete(0, tk.END)
+            self.youtube_url_entry.config(fg=self.styles[self.theme]["fg"])
