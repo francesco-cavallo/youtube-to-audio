@@ -11,6 +11,7 @@ LANGUAGES = {
         "download_audio": "⬇️ Scarica Audio",
         "open_folder": "📂 Apri cartella",
         "folder_label": "📁 Cartella:",
+        "clear_log": "🧹 Pulisci log",
         "downloading": "⏳ Scaricamento in corso...",
         "download_complete": "✅ Download completato",
         "start_download": "Inizio download...",
@@ -20,6 +21,7 @@ LANGUAGES = {
         "error_ffmpeg": "❌ FFMPEG non trovato. Controlla il percorso in config.py.",
         "error_unknown": "❌ Errore sconosciuto durante il download.",
         "status": "Stato",
+        "url_placeholder": "Incolla qui il link del video..."
     },
     "en": {
         "title": "YouTube to Audio",
@@ -31,6 +33,7 @@ LANGUAGES = {
         "download_audio": "⬇️ Download Audio",
         "open_folder": "📂 Open Folder",
         "folder_label": "📁 Folder:",
+        "clear_log": "🧹 Clear logs",
         "downloading": "⏳ Downloading...",
         "download_complete": "✅ Download completed",
         "start_download": "Starting download...",
@@ -40,6 +43,7 @@ LANGUAGES = {
         "error_ffmpeg": "❌ FFMPEG not found. Check the path in config.py.",
         "error_unknown": "❌ Unknown error during download.",
         "status": "Status",
+        "url_placeholder": "Paste the video link here..."
     }
 }
 

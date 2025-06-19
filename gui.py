@@ -18,11 +18,13 @@ class YouTubeConverterApp:
         self.root.geometry("600x560")
 
         self.theme = "dark"
+        self.lang = "it"
         self.selected_folder = DEFAULT_DOWNLOAD_FOLDER
         self.current_title = tk.StringVar(value="Nessun download in corso")
         self.status_message = tk.StringVar()
 
         self.styles = {}
+        self._current_placeholder = None
         self.build_ui()
         self.setup_styles()
         self.set_url_placeholder()
@@ -34,17 +36,21 @@ class YouTubeConverterApp:
         self.container.grid_columnconfigure(2, weight=1)
         self.container.pack(pady=15, padx=15, fill="both", expand=True)
 
-        self.theme_button = tk.Button(self.container, text="🌓 Cambia Tema", command=self.toggle_theme)
+        self.language_button = tk.Button(self.container, text="🌐 IT / EN", command=self.toggle_language)
+        self.language_button.grid(row=0, column=0, sticky="w", padx=5, pady=5)
+
+        self.theme_button = tk.Button(self.container, command=self.toggle_theme)
         self.theme_button.grid(row=0, column=2, sticky="e", padx=5, pady=5)
 
-        self.url_label = tk.Label(self.container, text="🎵 URL del video YouTube:")
+        self.url_label = tk.Label(self.container)
         self.url_label.grid(row=1, column=0, columnspan=3, sticky="n", pady=(10, 2))
 
         self.youtube_url_entry = tk.Entry(self.container, width=50)
         self.youtube_url_entry.grid(row=2, column=0, columnspan=3, sticky="we", padx=5, pady=5)
         self.youtube_url_entry.bind("<FocusIn>", self.clear_url_placeholder)
+        self.youtube_url_entry.bind("<FocusOut>", self.restore_url_placeholder)
 
-        self.format_label = tk.Label(self.container, text="🎧 Formato audio:")
+        self.format_label = tk.Label(self.container)
         self.format_label.grid(row=3, column=0, columnspan=3, sticky="n", pady=(10, 2))
 
         self.format_var = tk.StringVar()
@@ -62,23 +68,26 @@ class YouTubeConverterApp:
         self.log_area.grid(row=7, column=0, columnspan=3, padx=5, pady=(5, 0))
         self.log_area.config(state=tk.DISABLED)
 
-        self.clear_log_btn = tk.Button(self.container, text="🧹 Pulisci Log", command=self.clear_log)
-        self.clear_log_btn.grid(row=8, column=2, padx=5, pady=2, sticky="e")
+        self.clear_log_btn = tk.Button(self.container, command=self.clear_log)
+        self.clear_log_btn.grid(row=8, column=0, columnspan=3, pady=(2, 5), sticky="n")
 
-        self.folder_label = tk.Label(self.container, text=f"📁 Cartella: {self.selected_folder}")
+        self.folder_label = tk.Label(self.container)
         self.folder_label.grid(row=9, column=0, columnspan=3, sticky="w", padx=5, pady=(5, 0))
 
-        self.choose_button = tk.Button(self.container, text="Scegli cartella di destinazione", command=self.select_folder)
+        self.choose_button = tk.Button(self.container, command=self.select_folder)
         self.choose_button.grid(row=10, column=0, padx=5, pady=(10, 5), sticky="we")
 
-        self.download_button = tk.Button(self.container, text="⬇️ Scarica Audio", command=self.threaded_download)
+        self.download_button = tk.Button(self.container, command=self.threaded_download)
         self.download_button.grid(row=10, column=1, padx=5, pady=(10, 5), sticky="we")
 
-        self.open_folder_button = tk.Button(self.container, text="📂 Apri cartella", command=self.open_folder)
+        self.open_folder_button = tk.Button(self.container, command=self.open_folder)
         self.open_folder_button.grid(row=10, column=2, padx=5, pady=(10, 5), sticky="we")
 
         self.status_label = tk.Label(self.container, textvariable=self.status_message, font=FONT_ITALIC)
         self.status_label.grid(row=11, column=0, columnspan=3, pady=(5, 0))
+
+        self.refresh_ui()
+        self.set_url_placeholder()
 
     def setup_styles(self):
         self.styles = {
@@ -195,6 +204,11 @@ class YouTubeConverterApp:
         self.current_title.set("Inizio download...")
 
         url = self.youtube_url_entry.get().strip()
+        if url == t("url_placeholder", self.lang) or url == "":
+            self.set_status("Inserisci un URL valido.", success=False)
+            self.set_buttons(True)
+            return
+
         format_audio = self.format_var.get().strip().lower()
 
         self.youtube_url_entry.config(highlightthickness=0)
@@ -229,10 +243,44 @@ class YouTubeConverterApp:
             self.theme_button.config(state=tk.NORMAL)
 
     def set_url_placeholder(self):
-        self.youtube_url_entry.insert(0, "Incolla qui il link del video...")
-        self.youtube_url_entry.config(fg="#888")
+        placeholder = t("url_placeholder", self.lang)
+        current_text = self.youtube_url_entry.get()
+        if current_text == "" or current_text == self._current_placeholder:
+            self.youtube_url_entry.delete(0, tk.END)
+            self.youtube_url_entry.insert(0, placeholder)
+            self.youtube_url_entry.config(fg="#888")
+            self._current_placeholder = placeholder
+        else:
+            self._current_placeholder = None
 
     def clear_url_placeholder(self, event):
-        if self.youtube_url_entry.get() == "Incolla qui il link del video...":
+        placeholder = t("url_placeholder", self.lang)
+        current_text = self.youtube_url_entry.get()
+        if current_text == placeholder:
             self.youtube_url_entry.delete(0, tk.END)
             self.youtube_url_entry.config(fg=self.styles[self.theme]["fg"])
+            self._current_placeholder = None
+
+    def restore_url_placeholder(self, event):
+        current_text = self.youtube_url_entry.get()
+        if current_text == "":
+            self.set_url_placeholder()
+
+
+    def toggle_language(self):
+        self.lang = "en" if self.lang == "it" else "it"
+        self.refresh_ui()
+        self.set_url_placeholder()
+        self.root.focus()
+
+    def refresh_ui(self):
+        self.root.title(t("title", self.lang))
+        self.theme_button.config(text=t("change_theme", self.lang))
+        self.url_label.config(text=t("video_url", self.lang))
+        self.format_label.config(text=t("audio_format", self.lang))
+        self.choose_button.config(text=t("select_folder", self.lang))
+        self.download_button.config(text=t("download_audio", self.lang))
+        self.open_folder_button.config(text=t("open_folder", self.lang))
+        self.folder_label.config(text=f"{t('folder_label', self.lang)} {self.selected_folder}")
+        self.current_title.set(t("no_download", self.lang))
+        self.clear_log_btn.config(text=t("clear_log", self.lang))
