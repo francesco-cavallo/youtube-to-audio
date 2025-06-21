@@ -21,7 +21,8 @@ LANGUAGES = {
         "error_ffmpeg": "❌ FFMPEG non trovato. Controlla il percorso in config.py.",
         "error_unknown": "❌ Errore sconosciuto durante il download.",
         "status": "Stato",
-        "url_placeholder": "Incolla qui il link del video..."
+        "url_placeholder": "Incolla qui il link del video...",
+        "audio_quality": "Qualità audio (kbps):",
     },
     "en": {
         "title": "YouTube to Audio",
@@ -43,7 +44,8 @@ LANGUAGES = {
         "error_ffmpeg": "❌ FFMPEG not found. Check the path in config.py.",
         "error_unknown": "❌ Unknown error during download.",
         "status": "Status",
-        "url_placeholder": "Paste the video link here..."
+        "url_placeholder": "Paste the video link here...",
+        "audio_quality": "Audio quality (kbps):",
     }
 }
 

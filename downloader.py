@@ -5,19 +5,22 @@ import yt_dlp
 from config import FFMPEG_PATH
 from utils import validate_inputs
 
-def download_audio(url, format_audio, output_folder, hook):
+def download_audio(url, format_audio, output_folder, hook, audio_quality=None):
     error = validate_inputs(url, format_audio)
     if error:
         return False, error
 
+    postprocessor_opts = {
+        'key': 'FFmpegExtractAudio',
+        'preferredcodec': format_audio,
+    }
+    if audio_quality:
+        postprocessor_opts['preferredquality'] = audio_quality
+
     ydl_opts = {
         'format': 'bestaudio/best',
         'ffmpeg_location': FFMPEG_PATH,
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': format_audio,
-            'preferredquality': '192',
-        }],
+        'postprocessors': [postprocessor_opts],
         'outtmpl': os.path.join(output_folder, '%(title)s.%(ext)s'),
         'noplaylist': True,
         'quiet': True,

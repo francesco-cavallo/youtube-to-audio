@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
-from config import DEFAULT_DOWNLOAD_FOLDER, SUPPORTED_FORMATS
+from config import DEFAULT_DOWNLOAD_FOLDER, SUPPORTED_FORMATS, QUALITY_MAP
 from downloader import download_audio
 import threading
 import os
@@ -51,43 +51,57 @@ class YouTubeConverterApp:
         self.youtube_url_entry.bind("<FocusOut>", self.restore_url_placeholder)
 
         self.format_label = tk.Label(self.container)
-        self.format_label.grid(row=3, column=0, columnspan=3, sticky="n", pady=(10, 2))
+        self.format_label.grid(row=3, column=0, columnspan=1, sticky="nw", pady=(10, 2))
 
         self.format_var = tk.StringVar()
-        self.format_dropdown = ttk.Combobox(self.container, textvariable=self.format_var, values=sorted(SUPPORTED_FORMATS))
+        self.format_dropdown = ttk.Combobox(self.container, textvariable=self.format_var,
+                                    values=sorted(SUPPORTED_FORMATS),
+                                    style="Custom.TCombobox", state="readonly")
         self.format_dropdown.current(0)
-        self.format_dropdown.grid(row=4, column=0, columnspan=3, sticky="we", padx=5, pady=5)
+        self.format_dropdown.grid(row=4, column=0, columnspan=1, sticky="nw", padx=5, pady=5)
+        self.format_dropdown.bind("<<ComboboxSelected>>", self.update_quality_options)
+
+        self.quality_label = tk.Label(self.container, text=t("audio_quality", self.lang))
+        self.quality_label.grid(row=3, column=2, columnspan=1, sticky="ne", pady=(10, 2))
+
+        self.quality_var = tk.StringVar()
+        self.quality_dropdown = ttk.Combobox(self.container, textvariable=self.quality_var,
+                                     values=["64", "128", "192", "256", "320"],
+                                     style="Custom.TCombobox", state="readonly")
+        self.quality_dropdown.current(2)  # Predefinito 192
+        self.quality_dropdown.grid(row=4, column=2, columnspan=1, sticky="ne", padx=5, pady=5)
 
         self.title_label = tk.Label(self.container, textvariable=self.current_title, wraplength=450, justify="center", font=FONT_ITALIC)
-        self.title_label.grid(row=5, column=0, columnspan=3, pady=5)
+        self.title_label.grid(row=7, column=0, columnspan=3, pady=5)
 
         self.progress = ttk.Progressbar(self.container, orient="horizontal", length=400, mode="determinate")
-        self.progress.grid(row=6, column=0, columnspan=3, padx=10, pady=10)
+        self.progress.grid(row=8, column=0, columnspan=3, padx=10, pady=10)
 
         self.log_area = tk.Text(self.container, height=8, width=65, font=("Consolas", 9))
-        self.log_area.grid(row=7, column=0, columnspan=3, padx=5, pady=(5, 0))
+        self.log_area.grid(row=9, column=0, columnspan=3, padx=5, pady=(5, 0))
         self.log_area.config(state=tk.DISABLED)
 
         self.clear_log_btn = tk.Button(self.container, command=self.clear_log)
-        self.clear_log_btn.grid(row=8, column=0, columnspan=3, pady=(2, 5), sticky="n")
+        self.clear_log_btn.grid(row=10, column=0, columnspan=3, pady=(2, 5), sticky="n")
 
         self.folder_label = tk.Label(self.container)
-        self.folder_label.grid(row=9, column=0, columnspan=3, sticky="w", padx=5, pady=(5, 0))
+        self.folder_label.grid(row=11, column=0, columnspan=3, sticky="w", padx=5, pady=(5, 0))
 
         self.choose_button = tk.Button(self.container, command=self.select_folder)
-        self.choose_button.grid(row=10, column=0, padx=5, pady=(10, 5), sticky="we")
+        self.choose_button.grid(row=12, column=0, padx=5, pady=(10, 5), sticky="we")
 
         self.download_button = tk.Button(self.container, command=self.threaded_download)
-        self.download_button.grid(row=10, column=1, padx=5, pady=(10, 5), sticky="we")
+        self.download_button.grid(row=12, column=1, padx=5, pady=(10, 5), sticky="we")
 
         self.open_folder_button = tk.Button(self.container, command=self.open_folder)
-        self.open_folder_button.grid(row=10, column=2, padx=5, pady=(10, 5), sticky="we")
+        self.open_folder_button.grid(row=12, column=2, padx=5, pady=(10, 5), sticky="we")
 
         self.status_label = tk.Label(self.container, textvariable=self.status_message, font=FONT_ITALIC)
-        self.status_label.grid(row=11, column=0, columnspan=3, pady=(5, 0))
+        self.status_label.grid(row=13, column=0, columnspan=3, pady=(5, 0))
 
         self.refresh_ui()
         self.set_url_placeholder()
+        self.update_quality_options()
 
     def setup_styles(self):
         self.styles = {
@@ -102,7 +116,7 @@ class YouTubeConverterApp:
         }
 
         style = ttk.Style()
-        style.theme_use('default')
+        style.theme_use('clam')
         self.apply_theme()
 
     def apply_theme(self):
@@ -126,11 +140,22 @@ class YouTubeConverterApp:
                 print(f"Errore configurazione widget: {e}")
 
         style = ttk.Style()
+        style.theme_use('clam')
+
+        # Sfondo e testo per lo stato readonly
+        style.map("Custom.TCombobox",
+                fieldbackground=[("readonly", theme["entry_bg"])],
+                foreground=[("readonly", theme["fg"])],
+                background=[("readonly", theme["entry_bg"])])
+
+        # Sfondo del dropdown (popup)
         style.configure("Custom.TCombobox",
                         fieldbackground=theme["entry_bg"],
                         background=theme["entry_bg"],
                         foreground=theme["fg"])
+
         self.format_dropdown.configure(style="Custom.TCombobox")
+        self.quality_dropdown.configure(style="Custom.TCombobox")
 
     def toggle_theme(self):
         self.theme = "light" if self.theme == "dark" else "dark"
@@ -214,7 +239,8 @@ class YouTubeConverterApp:
         self.youtube_url_entry.config(highlightthickness=0)
 
         self.log(f"Inizio download: {url} in formato {format_audio}")
-        success, message = download_audio(url, format_audio, self.selected_folder, self.hook)
+        audio_quality = self.quality_var.get().strip() if self.quality_dropdown["state"] == "readonly" else None
+        success, message = download_audio(url, format_audio, self.selected_folder, self.hook, audio_quality)
         self.log(message)
 
         self.set_status(message, success=success)
@@ -266,7 +292,6 @@ class YouTubeConverterApp:
         if current_text == "":
             self.set_url_placeholder()
 
-
     def toggle_language(self):
         self.lang = "en" if self.lang == "it" else "it"
         self.refresh_ui()
@@ -284,3 +309,17 @@ class YouTubeConverterApp:
         self.folder_label.config(text=f"{t('folder_label', self.lang)} {self.selected_folder}")
         self.current_title.set(t("no_download", self.lang))
         self.clear_log_btn.config(text=t("clear_log", self.lang))
+    
+    def update_quality_options(self, event=None):
+        selected_format = self.format_var.get().lower()
+        qualities = QUALITY_MAP.get(selected_format, ["64", "128", "192", "256", "320"])
+        
+        if not qualities:
+            self.quality_dropdown.config(state="disabled")
+            self.quality_var.set("")
+        else:
+            self.quality_dropdown.config(state="readonly")
+            self.quality_dropdown["values"] = qualities
+            # Imposta di default il primo disponibile o mantieni la selezione attuale
+            if self.quality_var.get() not in qualities:
+                self.quality_var.set(qualities[2] if "192" in qualities else qualities[0])
